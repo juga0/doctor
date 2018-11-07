@@ -30,6 +30,7 @@ del DIRECTORY_AUTHORITIES['tor26']  # DirPort does not service requests without 
 
 EMAIL_SUBJECT = 'Consensus issues'
 BANDWIDTH_AUTHORITIES = ('moria1', 'gabelmoo', 'maatuska', 'Faravahar', 'bastet', 'longclaw')
+SBWS_BWAUTHS = ['longclaw']
 
 CONFIG = stem.util.conf.config_dict('consensus_health', {
   'msg': {},
@@ -804,7 +805,11 @@ def bandwidth_authorities_in_sync(latest_consensus, consensuses, votes):
   average = sum(measurement_counts.values()) / len(measurement_counts)
 
   for authority, count in measurement_counts.items():
-    if count > (1.2 * average) or count < (0.8 * average):
+    # if the bandwidth authority is using data from sbws, do not show this 
+    # warning temporally, since it is known that sbws report less number of
+    # relays
+    if (count > (1.2 * average) or count < (0.8 * average)) \
+            and authority not in SBWS_BWAUTHS:
       entries = ['%s (%s)' % (authority, count) for authority, count in measurement_counts.items()]
       return Issue(Runlevel.NOTICE, 'BANDWIDTH_AUTHORITIES_OUT_OF_SYNC', authorities = ', '.join(entries), to = measurement_counts.keys())
 
